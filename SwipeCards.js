@@ -58,11 +58,11 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 5,
     left: 0
-  }
+  },
+	card: {
+		zIndex: 100
+	}
 });
-
-let currentIndex = {};
-let guid = 0;
 
 export default class SwipeCards extends Component {
   static propTypes = {
@@ -101,10 +101,12 @@ export default class SwipeCards extends Component {
     handleTop: React.PropTypes.func,
 		handleBottom: React.PropTypes.func,
     handleLeft: React.PropTypes.func,
+		handleEnd: React.PropTypes.func,
     renderCard: React.PropTypes.func,
     cardRemoved: React.PropTypes.func,
     dragY: React.PropTypes.bool,
-    smoothTransition: React.PropTypes.bool
+    smoothTransition: React.PropTypes.bool,
+		index: React.PropTypes.number
   };
   static defaultProps = {
     cards: [],
@@ -139,14 +141,12 @@ export default class SwipeCards extends Component {
 
   constructor(props) {
     super(props);
-    this.guid = this.props.guid || guid++;
-    if (!currentIndex[this.guid]) currentIndex[this.guid] = 0;
-
     this.state = {
       pan: new Animated.ValueXY(0),
       enter: new Animated.Value(0.5),
       cards: [].concat(this.props.cards),
-      card: this.props.cards[currentIndex[this.guid]],
+      card: this.props.cards[this.props.index],
+			handleEnd: false
     };
 
     this.lastX = 0;
@@ -227,7 +227,7 @@ export default class SwipeCards extends Component {
             this._resetPan();
             return;
           };
-          this.props.cardRemoved(currentIndex[this.guid]);
+          this.props.cardRemoved(this.props.index);
 
           if (this.props.smoothTransition) {
             this._advanceState();
@@ -252,37 +252,6 @@ export default class SwipeCards extends Component {
     });
   }
 
-  _goToNextCard() {
-    currentIndex[this.guid]++;
-
-    // Checks to see if last card.
-    // If props.loop=true, will start again from the first card.
-    if (currentIndex[this.guid] > this.state.cards.length - 1 && this.props.loop) {
-      this.props.onLoop();
-      currentIndex[this.guid] = 0;
-    }
-
-    this.setState({
-      card: this.state.cards[currentIndex[this.guid]]
-    });
-  }
-
-  _goToPrevCard() {
-    this.state.pan.setValue({ x: 0, y: 0 });
-    this.state.enter.setValue(0);
-    this._animateEntrance();
-
-    currentIndex[this.guid]--;
-
-    if (currentIndex[this.guid] < 0) {
-      currentIndex[this.guid] = 0;
-    }
-
-    this.setState({
-      card: this.state.cards[currentIndex[this.guid]]
-    });
-  }
-
   componentDidMount() {
     this._animateEntrance();
   }
@@ -296,16 +265,18 @@ export default class SwipeCards extends Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.cards !== this.props.cards) {
-
       if (this.cardAnimation) {
         this.cardAnimation.stop();
         this.cardAnimation = null;
       }
 
-      currentIndex[this.guid] = 0;
       this.setState({
-        cards: [].concat(nextProps.cards),
-        card: nextProps.cards[0]
+        cards: [].concat(nextProps.cards)
+      });
+    }
+		if (nextProps.index !== this.props.index) {
+      this.setState({
+        card: nextProps.cards[nextProps.index]
       });
     }
   }
@@ -327,14 +298,19 @@ export default class SwipeCards extends Component {
     this.state.pan.setValue({ x: 0, y: 0 });
     this.state.enter.setValue(0);
     this._animateEntrance();
-    this._goToNextCard();
   }
 
   getCurrentCard() {
-      return this.state.cards[currentIndex[this.guid]];
+      return this.state.cards[this.props.index];
   }
 
   renderNoMoreCards() {
+		if (this.props.handleEnd && !this.state.handleEnd) {
+			this.setState({
+				handleEnd: true
+			});
+			this.props.handleEnd();
+		}
     if (this.props.renderNoMoreCards) {
       return this.props.renderNoMoreCards();
     }
@@ -347,7 +323,7 @@ export default class SwipeCards extends Component {
       return this.renderNoMoreCards();
     }
 
-    let cards = this.state.cards.slice(currentIndex[this.guid], currentIndex[this.guid] + this.props.stackDepth).reverse();
+    let cards = this.state.cards.slice(this.props.index, this.props.index + this.props.stackDepth).reverse();
 
     return cards.map((card, i) => {
 
@@ -515,6 +491,7 @@ export default class SwipeCards extends Component {
         {this.renderTop()}
 				{this.renderBottom()}
         {this.renderRight()}
+				{this.props.children}
       </View>
     );
   }
