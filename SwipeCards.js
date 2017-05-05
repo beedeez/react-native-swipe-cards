@@ -18,6 +18,7 @@ const SWIPE_THRESHOLD = 120;
 
 const styles = StyleSheet.create({
   container: {
+		width: viewport.width,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -486,12 +487,12 @@ export default class SwipeCards extends Component {
   render() {
     return (
       <View style={styles.container}>
+				{this.props.children}
         {this.props.stack ? this.renderStack() : this.renderCard()}
         {this.renderLeft()}
         {this.renderTop()}
 				{this.renderBottom()}
         {this.renderRight()}
-				{this.props.children}
       </View>
     );
   }
