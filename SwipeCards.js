@@ -125,10 +125,9 @@ export default class SwipeCards extends Component {
 		this.state = {
 			pan: new Animated.ValueXY(0),
 			cards: [].concat(this.props.cards),
-			card: this.props.cards[this.props.index],
-			handleEnd: false
+			card: this.props.cards[this.props.index]
 		};
-
+		this.handleEnd = false;
 		this.lastX = 0;
 		this.lastY = 0;
 
@@ -279,6 +278,7 @@ export default class SwipeCards extends Component {
 			this.setState({
 				card: nextProps.cards[nextProps.index]
 			});
+			this.handleEnd = false;
 		}
 	}
 
@@ -302,10 +302,8 @@ export default class SwipeCards extends Component {
 	}
 
 	renderNoMoreCards() {
-		if (this.props.handleEnd && !this.state.handleEnd) {
-			this.setState({
-				handleEnd: true
-			});
+		if (this.props.handleEnd && !this.handleEnd) {
+			this.handleEnd = true;
 			this.props.handleEnd();
 		}
 		if (this.props.renderNoMoreCards) {
